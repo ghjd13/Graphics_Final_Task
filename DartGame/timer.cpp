@@ -20,7 +20,7 @@ namespace Game {
                 isResetting = false;
                 resetTimer = 0.0f;
                 dartWorldPos = dartStartPos;
-                currentDartAim = glm::vec3(0.0f);
+                currentDartAim =   glm::vec3(0.0f);
                 dartTime = 0.0f;
                 snprintf(scoreMessage, sizeof(scoreMessage), "Ready");
             }

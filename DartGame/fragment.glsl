@@ -1,46 +1,46 @@
 #version 330 core
 in vec3 FragPos; 
-in vec3 Normal;
-// [추가] 버텍스 쉐이더에서 넘겨준 텍스처 좌표 받기
-in vec2 TexCoord; 
+in vec2 TexCoord;
+in mat3 TBN; // [New] 버텍스 쉐이더에서 받은 TBN
 
 out vec4 FragColor;
 
 uniform vec3 lightPos;      
 uniform vec3 lightColor;    
 uniform vec3 viewPos;       
-// [변경] objectColor(단색) 대신 그림파일(texture1)을 사용합니다.
-uniform sampler2D texture1; 
+
+// [New] 텍스처 샘플러들
+uniform sampler2D texture_diffuse; // 기본 색상 (Slot 0)
+uniform sampler2D texture_normal;  // 노말 맵 (Slot 1)
 
 void main ()
 {
-	// --- 1. 주변광 (Ambient) ---
-    // (사용자님 수식 100% 그대로)
-	vec3 ambientLight = vec3(0.3); 
-	vec3 ambient = ambientLight * lightColor;
-	
-	// --- 2. 산란 반사광 (Diffuse) ---
-    // (사용자님 수식 100% 그대로)
-	vec3 normVector = normalize(Normal);
-	vec3 lightDir = normalize(lightPos - FragPos); 
-	float diffuseLight = max(dot(normVector, lightDir), 0.0); 
-	vec3 diffuse = diffuseLight * lightColor; 
-	
-	// --- 3. 거울 반사광 (Specular) ---
-    // (사용자님 수식 100% 그대로)
-	int shininess = 128; 
-	vec3 viewDir = normalize(viewPos - FragPos); 
-	vec3 reflectDir = reflect(-lightDir, normVector); 
-	float specularLight = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
-	vec3 specular = specularLight * lightColor;
-	
-	// --- 4. 최종 색상 ---
-    // [수정] 텍스처에서 색상을 뽑아옵니다.
-    vec4 texColor = texture(texture1, TexCoord);
+    // 1. 노말 맵에서 법선 벡터 가져오기
+    vec3 normal = texture(texture_normal, TexCoord).rgb;
+    // [0,1] 범위를 [-1,1]로 변환
+    normal = normalize(normal * 2.0 - 1.0);   
+    // TBN 행렬을 곱해 월드 공간 법선으로 변환
+    normal = normalize(TBN * normal); 
 
-    // 사용자님의 수식 (ambient + diffuse + specular) 전체에
-    // 단색(objectColor) 대신 그림(texColor)을 입혔습니다.
-	vec3 result = (ambient + diffuse + specular) * texColor.rgb; 
-	
-	FragColor = vec4(result, 1.0); 
+    // 2. 색상 텍스처에서 색상 가져오기
+    vec3 color = texture(texture_diffuse, TexCoord).rgb;
+
+    // 3. 조명 계산 (Normal 변수 사용)
+    // Ambient
+    vec3 ambient = 0.1 * color;
+    
+    // Diffuse
+    vec3 lightDir = normalize(lightPos - FragPos);
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = diff * lightColor * color;
+    
+    // Specular
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specular = spec * lightColor * 0.5; // 반사광 세기 조절
+    
+    vec3 result = ambient + diffuse + specular;
+    
+    FragColor = vec4(result, 1.0); 
 }

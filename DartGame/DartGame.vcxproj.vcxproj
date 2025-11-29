@@ -141,6 +141,7 @@
     <ClInclude Include="models.h" />
     <ClInclude Include="objects.h" />
     <ClInclude Include="shader_util.h" />
+    <ClInclude Include="stb_image.h" />
     <ClInclude Include="texture_util.h" />
   </ItemGroup>
   <ItemGroup>

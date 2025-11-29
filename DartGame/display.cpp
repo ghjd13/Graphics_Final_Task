@@ -63,35 +63,82 @@ namespace Game {
         g_Shader->setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
         g_Shader->setVec3("viewPos", cameraPos);
 
+        // 쉐이더 텍스처 슬롯 지정 (0번: 색상, 1번: 노말)
+        g_Shader->setInt("texture_diffuse", 0);
+        g_Shader->setInt("texture_normal", 1);
+
+        // 뷰, 프로젝션 행렬 설정
         glm::mat4 view;
-        if (isCameraMode)
-            view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        else
-            view = glm::lookAt(cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        if (isCameraMode) view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        else view = glm::lookAt(cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
         g_Shader->setMat4("view", view);
         g_Shader->setMat4("projection", projection);
 
-        // 방
-        glDisable(GL_CULL_FACE);
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::scale(model, glm::vec3(30.0f, 20.0f, 40.0f));
-        g_Shader->setMat4("model", model);
-        glBindTexture(GL_TEXTURE_2D, texRoom);
-        g_Room->draw();
-        glEnable(GL_CULL_FACE);
+        // ==========================================
+        // 1. 바닥 (Floor) 그리기
+        // ==========================================
+        glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, texFloor);
+        glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, texFloorNormal);
 
-        // 다트판
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, -10.0f, 0.0f)); // 아래로 내림
+        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // 눕히기
+        model = glm::scale(model, glm::vec3(40.0f, 40.0f, 1.0f)); // 크기 40x40
+        g_Shader->setMat4("model", model);
+        g_Plane->draw();
+
+        // ==========================================
+        // 2. 벽 (Walls) 그리기 - 타일 텍스처
+        // ==========================================
+        glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, texWall);
+        glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, texWallNormal);
+
+        // [뒷벽]
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 10.0f, -20.0f));
+        model = glm::scale(model, glm::vec3(40.0f, 40.0f, 1.0f)); // 가로 40, 높이 20
+        g_Shader->setMat4("model", model);
+        g_Plane->draw();
+
+        // [왼쪽 벽]
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-20.0f, 10.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(40.0f, 40.0f, 1.0f));
+        g_Shader->setMat4("model", model);
+        g_Plane->draw();
+
+        // [오른쪽 벽]
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(20.0f, 10.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(40.0f, 40.0f, 1.0f));
+        g_Shader->setMat4("model", model);
+        g_Plane->draw();
+
+        // ==========================================
+        // 3. 다트판 (기본 텍스처 + 평면 노말)
+        // ==========================================
+        // 다트판은 노말맵을 따로 안 만들었으므로 'texDefaultNormal'을 씁니다.
+        // (만약 다트판 텍스처 변수가 texBoard라면)
+        glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, texBoard);
+        glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, texDefaultNormal); // 평평함
+
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, -10.0f));
         model = glm::rotate(model, glm::radians(boardRotAngle), glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::scale(model, glm::vec3(5.0f, 5.0f, 1.0f));
         g_Shader->setMat4("model", model);
-        glBindTexture(GL_TEXTURE_2D, texBoard);
         g_Board->draw();
 
-        // 다트
+        // ==========================================
+        // 4. 다트 (OBJ 파일)
+        // ==========================================
+        glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, texDart); // 녹색
+        glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, texDefaultNormal); // 평평함
+
         model = glm::mat4(1.0f);
         model = glm::translate(model, dartWorldPos);
         float pitch = currentDartAim.x;
@@ -99,11 +146,10 @@ namespace Game {
         if (isFired) pitch -= dartTime * 15.0f;
         model = glm::rotate(model, glm::radians(-yaw), glm::vec3(0, 1, 0));
         model = glm::rotate(model, glm::radians(pitch), glm::vec3(1, 0, 0));
-        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-        model = glm::scale(model, glm::vec3(0.2f, 2.0f, 0.2f));
+        model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1, 0, 0)); // OBJ 방향에 따라 조절
+        model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f)); // OBJ 크기 조절
         g_Shader->setMat4("model", model);
-        glBindTexture(GL_TEXTURE_2D, texDart);
-        g_DartShape->draw();
+        g_DartShape->draw(); // Cylinder 대신 OBJ 메쉬 사용
 
         // 램프
         glUseProgram(lampProgramID);
