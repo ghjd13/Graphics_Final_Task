@@ -45,6 +45,8 @@ extern GLuint texFloor, texFloorNormal;
 extern GLuint texWall, texWallNormal;
 extern GLuint texDart;
 extern GLuint texBoard;         // [복구] 다트판 텍스처 변수
+extern GLuint texCeiling;
+extern GLuint texCeilingNormal;
 extern GLuint texDefaultNormal; // 기본 노말 맵
 
 extern float lastFrameTime;

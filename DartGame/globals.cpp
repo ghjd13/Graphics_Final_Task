@@ -37,6 +37,8 @@ GLuint texFloor = 0, texFloorNormal = 0;
 GLuint texWall = 0, texWallNormal = 0;
 GLuint texDart = 0;
 GLuint texBoard = 0; // [복구] 초기화
+GLuint texCeiling = 0;
+GLuint texCeilingNormal = 0;
 GLuint texDefaultNormal = 0;
 
 float lastFrameTime = 0.0f;
@@ -67,6 +69,9 @@ void initGlobalObjects() {
 
     texWall = loadTexture("resource/wallUV.png");
     texWallNormal = loadTexture("resource/wallNormal.png");
+
+    texCeiling = loadTexture("resource/roofUV.png");
+    texCeilingNormal = loadTexture("resource/roofNormal.png");
 
     texDart = loadTexture("resource/dart.png"); // 다트 텍스처 (다트.png -> dart.png)
 

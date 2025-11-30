@@ -151,6 +151,32 @@ namespace Game {
         g_Shader->setMat4("model", model);
         g_DartShape->draw(); // Cylinder 대신 OBJ 메쉬 사용
 
+        // ==========================================
+        // [추가] 천장 (Ceiling) 그리기
+        // ==========================================
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texCeiling); // 천장 색상 맵
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texCeilingNormal); // 천장 노말 맵
+
+        model = glm::mat4(1.0f);
+        // 바닥(y=-10)의 반대편인 y=10 위치에 배치
+        model = glm::translate(model, glm::vec3(0.0f, 10.0f, 0.0f));
+
+        // 바닥과 마주보게 뒤집기 (X축 기준 90도 회전)
+        // 바닥은 -90도였으니 천장은 90도로 하면 서로 안쪽을 보게 됩니다.
+        model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+        // 크기는 벽과 동일하게
+        model = glm::scale(model, glm::vec3(40.0f, 40.0f, 1.0f));
+
+        g_Shader->setMat4("model", model);
+
+        // 바닥용 평면 객체(10x10 반복)를 재활용해서 그립니다.
+        // (만약 g_FloorPlane 변수를 쓰신다면 g_FloorPlane->draw()로 하세요)
+        if (g_Plane) g_Plane->draw();
+
         // 램프
         glUseProgram(lampProgramID);
         glUniformMatrix4fv(glGetUniformLocation(lampProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
